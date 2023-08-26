@@ -1,18 +1,14 @@
 import React from 'react';
 import ParticlesBg from 'particles-bg'
 import Navigation from './components/Navigation/Navigation';
+import Signin from './components/Signin/Signin';
+import Register from './components/Register/Register';
 import Logo from './components/Logo/Logo';
 import Rank from './components/Rank/Rank';
 import InputLinkForm from './components/InputLinkForm/InputLinkForm';
 import DetectionPanel from './components/DetectionPanel/DetectionPanel';
 import 'tachyons';
 import './App.css';
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// In this section, we set the user authentication, user and app ID, model details, and the URL
-// of the image we want as an input. Change these strings to run your own example.
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 const returnClarifaiRequestOptions = (imageUrl) => {
   // Your PAT (Personal Access Token) can be found in the portal under Authentification
@@ -59,7 +55,9 @@ class App extends React.Component {
     this.state = {
       input: '',
       imageURL: '',
-      box: {}
+      box: {},
+      route: 'signin',
+      isSignedIn: false
     };
   }
 
@@ -77,7 +75,6 @@ class App extends React.Component {
   }
 
   displayFaceBox = (box) => {
-    console.log(box);
     this.setState({ box: box });
   }
 
@@ -87,23 +84,40 @@ class App extends React.Component {
 
   onDetectClick = () => {
     this.setState({ imageURL: this.state.input });
-    console.log('click', this.state.input, this.state.imageURL);
     fetch("https://api.clarifai.com/v2/models/" + 'face-detection' + "/outputs", returnClarifaiRequestOptions(this.state.input))
       .then(response => response.json())
       .then(result => this.displayFaceBox(this.calculateFaceLocation(result)))
-      // .then(result => console.log(result.outputs[0].data.regions[0].region_info.bounding_box))
       .catch(error => console.log('error', error));
   }
 
+  onRouteChange = (route) => {
+    if (route === 'signout') {
+      this.setState({ isSignedIn: false })
+    } else if (route === 'home') {
+      this.setState({ isSignedIn: true })
+    }
+    this.setState({ route: route })
+  }
+
   render() {
+    const { isSignedIn, route, box, imageURL } = this.state;
     return (
       <div className="App" >
-        <Navigation />
-        <Logo />
-        <Rank />
-        <InputLinkForm onInputChange={this.onInputChange} onDetectClick={this.onDetectClick} />
-        <DetectionPanel box={this.state.box} imageURL={this.state.imageURL} />
         <ParticlesBg num={75} type="cobweb" color="#00FF00" bg={true} />
+        <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
+        {route === 'home'
+          ? <>
+            <Logo />
+            <Rank />
+            <InputLinkForm onInputChange={this.onInputChange} onDetectClick={this.onDetectClick} />
+            <DetectionPanel box={box} imageURL={imageURL} />
+          </>
+          : (
+            route === 'signin'
+              ? <Signin onRouteChange={this.onRouteChange} />
+              : <Register onRouteChange={this.onRouteChange} />
+          )
+        }
       </div >
     );
   }

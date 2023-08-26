@@ -20,7 +20,6 @@ const DetectionPanel = ({ imageURL, box }) => {
                         left: box.leftCol
                     }}
                 >
-
                 </div>
             </div>
         </div>
