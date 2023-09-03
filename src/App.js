@@ -10,62 +10,66 @@ import DetectionPanel from './components/DetectionPanel/DetectionPanel';
 import 'tachyons';
 import './App.css';
 
-const returnClarifaiRequestOptions = (imageUrl) => {
-  // Your PAT (Personal Access Token) can be found in the portal under Authentification
-  const PAT = 'e8889a8b2fb14b25bd470e0f9a315717';
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
-  const USER_ID = 'stefano616';
-  const APP_ID = 'AI-based-detection';
-  // Change these to whatever model and image URL you want to use
-  // const MODEL_ID = 'face-detection';
-  const IMAGE_URL = imageUrl;
+// Clarifai in the front-end
 
-  const raw = JSON.stringify({
-    "user_app_id": {
-      "user_id": USER_ID,
-      "app_id": APP_ID
-    },
-    "inputs": [
-      {
-        "data": {
-          "image": {
-            "url": IMAGE_URL
-          }
-        }
-      }
-    ]
-  });
+// const returnClarifaiRequestOptions = (imageUrl) => {
+//   // Your PAT (Personal Access Token) can be found in the portal under Authentification
+//   const PAT = 'e8889a8b2fb14b25bd470e0f9a315717';
+//   // Specify the correct user_id/app_id pairings
+//   // Since you're making inferences outside your app's scope
+//   const USER_ID = 'stefano616';
+//   const APP_ID = 'AI-based-detection';
+//   // Change these to whatever model and image URL you want to use
+//   // const MODEL_ID = 'face-detection';
+//   const IMAGE_URL = imageUrl;
 
-  const requestOptions = {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Authorization': 'Key ' + PAT
-    },
-    body: raw
-  };
+//   const raw = JSON.stringify({
+//     "user_app_id": {
+//       "user_id": USER_ID,
+//       "app_id": APP_ID
+//     },
+//     "inputs": [
+//       {
+//         "data": {
+//           "image": {
+//             "url": IMAGE_URL
+//           }
+//         }
+//       }
+//     ]
+//   });
 
-  return requestOptions;
+//   const requestOptions = {
+//     method: 'POST',
+//     headers: {
+//       'Accept': 'application/json',
+//       'Authorization': 'Key ' + PAT
+//     },
+//     body: raw
+//   };
+
+//   return requestOptions;
+// }
+
+const initialState = {
+  input: '',
+  imageURL: '',
+  box: {},
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: '',
+    email: '',
+    name: '',
+    entries: 0,
+    joined: ''
+  }
 }
 
 class App extends React.Component {
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageURL: '',
-      box: {},
-      route: 'signin',
-      isSignedIn: false,
-      user: {
-        id: '',
-        email: '',
-        name: '',
-        entries: 0,
-        joined: ''
-      }
-    };
+    this.state = initialState;
   }
 
   loadUser = (data) => {
@@ -81,7 +85,10 @@ class App extends React.Component {
   }
 
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    // clarifai in front-end
+    // const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    // Clarifai in back-end
+    const clarifaiFace = data.data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputImage');
     const width = Number(image.width);
     const height = Number(image.height);
@@ -103,11 +110,42 @@ class App extends React.Component {
 
   onDetectClick = () => {
     this.setState({ imageURL: this.state.input });
-    fetch("https://api.clarifai.com/v2/models/face-detection/outputs", returnClarifaiRequestOptions(this.state.input))
+    // Clarifai in front-end
+    // fetch("https://api.clarifai.com/v2/models/face-detection/outputs", returnClarifaiRequestOptions(this.state.input))
+    //   .then(response => response.json())
+    //   .then(result => {
+    //   if (result) {
+    //     fetch('http://localhost:3001/imageUpload',
+    //       {
+    //         method: 'put',
+    //         headers: { 'Content-Type': 'application/json' },
+    //         body: JSON.stringify({
+    //           id: this.state.user.id
+    //         })
+    //       })
+    //       .then(response => response.json())
+    //       .then(count => {
+    //         this.setState(Object.assign(this.state.user, { entries: count }))
+    //       })
+    //       .catch(console.log)
+    //   }
+    //   this.displayFaceBox(this.calculateFaceLocation(result))
+    // }
+    // )
+    // .catch(error => console.log('error', error));
+    fetch('https://backend-detectionapp.onrender.com/detect',
+      {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageURL: this.state.input
+        })
+      }
+    )
       .then(response => response.json())
       .then(result => {
         if (result) {
-          fetch('http://localhost:3001/imageUpload',
+          fetch('https://backend-detectionapp.onrender.com/imageUpload',
             {
               method: 'put',
               headers: { 'Content-Type': 'application/json' },
@@ -119,6 +157,7 @@ class App extends React.Component {
             .then(count => {
               this.setState(Object.assign(this.state.user, { entries: count }))
             })
+            .catch(console.log)
         }
         this.displayFaceBox(this.calculateFaceLocation(result))
       }
@@ -128,7 +167,7 @@ class App extends React.Component {
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({ isSignedIn: false })
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({ isSignedIn: true })
     }
@@ -145,7 +184,7 @@ class App extends React.Component {
           ? <>
             <Logo />
             <Rank username={this.state.user.name} entries={this.state.user.entries} />
-            <InputLinkForm onInputChange={this.onInputChange} onDetectClick={this.onDetectClick} />
+            <InputLinkForm onInputChange={this.onInputChange} onDetectClick={this.onDetectClick} onKeyPress={(event) => console.log(event)} />
             <DetectionPanel box={box} imageURL={imageURL} />
           </>
           : (

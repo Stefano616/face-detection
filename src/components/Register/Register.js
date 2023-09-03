@@ -23,7 +23,7 @@ class Register extends React.Component {
     }
 
     onSubmitSignin = () => {
-        fetch('http://localhost:3001/register',
+        fetch('https://backend-detectionapp.onrender.com/register',
             {
                 method: 'post',
                 headers: { 'Content-Type': 'application/json' },
@@ -35,11 +35,19 @@ class Register extends React.Component {
             })
             .then(response => response.json())
             .then(user => {
-                if (user) {
+                if (user.id) {
                     this.props.loadUser(user);
                     this.props.onRouteChange('home');
+                } else {
+                    alert('error registering!');
                 }
             })
+            .catch(console.log);
+    }
+    onKeyDown = (event) => {
+        if (event.key === "Enter") {
+            this.onSubmitSignin();
+        }
     }
 
     render() {
@@ -71,7 +79,8 @@ class Register extends React.Component {
                                     type="password"
                                     name="password"
                                     id="password"
-                                    onChange={this.onPasswordChange} />
+                                    onChange={this.onPasswordChange}
+                                    onKeyDown={this.onKeyDown} />
                             </div>
                         </fieldset>
                         <div className="">
